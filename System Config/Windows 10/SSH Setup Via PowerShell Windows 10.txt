@@ -1,0 +1,61 @@
+# Install Open-SSH server
+> choco install openssh
+...
+ 
+# Start sshd (SSH Server) service
+> Start-Service sshd
+ 
+# Confirm that the Firewall rule is configured. It may be created automatically by setup.
+# There should be a firewall rule named "OpenSSH-Server-In-TCP", which should be enabled
+> Get-NetFirewallRule | Where { $_.Enabled -eq `True' -and $_.Direction -eq `Inbound' -and $_.Name -like '*ssh*'}
+# Actual Name & DisplayName may be different
+Name                  : sshd
+DisplayName           : OpenSSH Server (sshd)
+...
+Enabled               : True
+...
+Direction             : Inbound
+Action                : Allow
+...
+ 
+# If a rule does not exist, create it
+> New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH Server (sshd)' -Enabled True
+-Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+ 
+# Enable SSH-Agent (It appears to be "Disabled" by default)
+> Set-Service ssh-agent -StartupType Automatic
+ 
+# Start ssh-agent
+> Start-Service ssh-agent
+ 
+# Check to see if services (ssh-agent & sshd) are up and running
+> Get-Service | Where-Object {$_.Name -like "ssh*"} | Where-Object {$_.Status -eq
+"Running"}
+ 
+Status   Name               DisplayName
+------   ----               -----------
+Running  ssh-agent          OpenSSH Authentication Agent
+Running  sshd               OpenSSH SSH Server
+ 
+# Create a directory to store your key-files (or choose an existing one)
+> mkdir ~/.ssh
+> cd ~/.ssh
+ 
+# Generate keys
+# You will be prompted for a filename and (optional) pass-phrase
+# We'll call the file "my_file"
+> ssh-keygen
+...
+ 
+# Verify the files exist
+> ls
+ 
+    Directory: C:\Users\myUser\.ssh
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----         5/13/2020   4:01 PM            803 known_hosts
+-a----         5/13/2020   6:52 PM           1675 my_file
+-a----         5/13/2020   6:52 PM            404 my_file.pub
+ 
+# Add the key into ssh-agent
+> ssh-add ~/.ssh/my_file
